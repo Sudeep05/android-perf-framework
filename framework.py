@@ -9,7 +9,7 @@ Two ways to run:
 
   Unattended (headless / CI / alongside an external UI-automation driver):
       python3 framework.py --package com.example.app --duration 30 --serial RZ8N...
-      python3 framework.py --config runs/driverx.json
+      python3 framework.py --config runs/session.json
 
   Parallel across every connected device:
       python3 run_parallel.py --package com.example.app --duration 30
