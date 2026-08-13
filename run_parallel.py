@@ -7,7 +7,7 @@ device gets its own ADB(serial), output directory, and per-serial trigger file,
 so there is zero cross-talk.
 
     python3 run_parallel.py --package com.example.app --duration 30
-    python3 run_parallel.py --config runs/driverx.json --serials RZ8N,RF9X
+    python3 run_parallel.py --config runs/session.json --serials RZ8N,RF9X
 
 Parallel runs are always non-interactive (there is no single operator to prompt),
 so --duration is required.
