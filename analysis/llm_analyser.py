@@ -105,7 +105,7 @@ Redundant calls: {json.dumps(network.get('redundant_calls', []))}
 Top job services: {json.dumps(network.get('top_jobs', []))}
 
 Please provide a thorough professional analysis following the structure above.
-Focus on practical, actionable insights relevant to a field driver app used 1-2 trips per day on this specific device.
+Focus on practical, actionable insights relevant to the app under test on this specific device.
 For each metric, explicitly state the measured value, the industry benchmark, and whether it passes or fails.
 """
     return prompt
@@ -266,11 +266,11 @@ The JSON must have this exact structure:
 }}
 
 Rules:
-- Assign CRITICAL only for issues that affect every driver every shift (e.g. battery drain, crash-level memory)
+- Assign CRITICAL only for issues that affect every user in every session (e.g. battery drain, crash-level memory)
 - Assign HIGH for issues causing noticeable user impact (slow start, significant memory leak)
 - Assign MEDIUM for issues worth fixing but not urgent (minor redundancy, cleanup)
 - Assign LOW for backlog items with minimal real-world impact
-- Base all priority judgements on the real-world usage pattern: 1-2 trips per day on a single device model
+- Base all priority judgements on typical real-world daily usage on a single device model
 - Be specific with numbers — do not repeat generic advice; reference actual measured values
 - Sort recommendations: CRITICAL first, then HIGH, MEDIUM, LOW
 
