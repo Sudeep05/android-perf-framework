@@ -37,7 +37,7 @@ pressing Enter. There is no fixed timer in this mode.
 ### Unattended / fixed duration  ← run for exactly N minutes
 ```bash
 python3 framework.py \
-  --package com.dpworld.drivex.tankers.nonprod \
+  --package com.example.package \
   --serial emulator-5554 \
   --duration 30
 ```
@@ -179,7 +179,7 @@ CLI flags. So a CLI flag always wins.
 ### Example JSON config
 ```json
 {
-  "package": "com.dpworld.drivex.tankers.nonprod",
+  "package": "com.example.package",
   "serial": "emulator-5554",
   "duration_min": 30,
   "snap_mode": 3,
