@@ -1,262 +1,154 @@
 # Android Mobile Performance Testing Framework — v4.2
+## Performance Engineering CoE
 
-A lightweight, serial-bound performance harness for Android apps. It **observes**
-an app while *you* (or your automation) drive it, then produces a formatted Word
-report covering start times, memory, CPU, GPS/camera, background jobs and
-network/SDK activity, with optional LLM analysis.
+An **observer** framework: it profiles the device, measures start times, and
+continuously captures CPU/memory/GPS/camera/network/battery while *you* — or an
+external UI-automation driver (Appium / Maestro / monkey / manual) — exercise
+the app. It then produces a colour-coded Word report with optional LLM analysis.
 
-> **Key mental model:** this framework does **not** tap through your app. It
-> launches the activity and records what happens. You must drive the UI —
-> manually, or via Appium / Maestro / monkey — during the capture window.
-> If nothing drives the app, most tables will be near-empty (see Troubleshooting).
+v4.2 makes it serial-aware, runnable unattended, and parallel across devices.
 
 ---
 
-## 1. Requirements
+### What changed from v4.1 (architect notes)
 
-| Need | Detail |
-|------|--------|
-| Python | 3.9+ (`python3`) |
-| adb | On `PATH`, device authorised (`adb devices` shows `device`) |
-| python-docx | Auto-installed on first run; or `pip3 install python-docx` |
-| Device/emulator | API 26+ recommended. A **real device** is required for meaningful battery/GPS/camera data — emulators barely populate hardware rails. |
-| LLM key (optional) | For Section 7/8 AI analysis. Without it the report falls back to rule-based recommendations. |
+| Area | v4.1 | v4.2 |
+|------|------|------|
+| Device targeting | bare `adb shell` (breaks with >1 device) | every call routed through a serial-bound `ADB` object (`core/adb.py`) |
+| Multi-device | one run, one device, shared `/tmp` trigger | `run_parallel.py` fans out; **per-serial** trigger files and output dirs |
+| Automation | blocking `input()` gates only | `--duration` unattended mode; CLI + `--config` JSON; `input()` only when interactive |
+| Session duration | `getmtime(session_dir)` (always ~1 min — bug) | anchored to `started_epoch` recorded at session start |
+| Warm start | relaunched a foreground activity (was really *hot* start) | backgrounds via `HOME` between runs → true warm start |
+| CPU sampling | positional `top` index, per-core, unnormalized | `dumpsys cpuinfo` (device-wide %), header-aware `top` fallback normalized by cores |
+| Memory parse | positional column indices (fragile on Android 11+) | label-driven App-Summary parse with table fallback (`modules/sampling.py`) |
+| logcat capture | `adb logcat \| grep` (OS grep dep, silent death) | in-process regex filter on a no-shell adb stream |
+| Battery over USB | `was_charging` → drain always voided | `dumpsys battery unplug` before, `reset` after (in `finally`) |
+| logcat filenames | mismatched what the network analyser read | aligned to `output_files()` keys |
 
 ---
 
-## 2. Quick start
+### Quick start
 
-### Interactive (single device — prompts you)
+```bash
+pip3 install python-docx --break-system-packages
+
+# LLM key (optional — report still generates without it)
+export ANTHROPIC_API_KEY=sk-ant-...        # or GEMINI_API_KEY / OPENAI_API_KEY
+export PERF_LLM_PROVIDER=anthropic         # anthropic | gemini | openai
+
+# Connect device(s) with USB Debugging enabled
+cd perf_framework
+```
+
+**Interactive (single device, prompts):**
 ```bash
 python3 framework.py
 ```
-Runs until **you press Enter**. Drive the app during that window. This is why a
-run can be "2 minutes" — it lasts exactly as long as you leave it open before
-pressing Enter. There is no fixed timer in this mode.
 
-### Unattended / fixed duration  ← run for exactly N minutes
+**Unattended (headless / CI / alongside your automation):**
 ```bash
-python3 framework.py \
-  --package com.example.package \
-  --serial emulator-5554 \
-  --duration 30
+python3 framework.py --package com.example.app --duration 30 --serial RZ8N1234
+python3 framework.py --config runs/session.json
 ```
-`--duration 30` captures for exactly 30 minutes, then finalises. Passing
-`--duration` automatically switches off interactive prompts, so `--package` is
-required (there's no operator to type it).
 
-### Parallel across every connected device
+**Parallel across every connected device:**
 ```bash
 python3 run_parallel.py --package com.example.app --duration 30
+python3 run_parallel.py --config runs/session.json --serials RZ8N1234,RF9X5678
 ```
 
 ---
 
-## 3. The four timing knobs (and where to set them)
+### Manual snapshot trigger (per device)
 
-These are the only things that control *when* and *how long* it captures.
-
-| Knob | Controls | Default | Set via CLI | Set in code |
-|------|----------|---------|-------------|-------------|
-| **Test duration** | How long the capture window runs (unattended only) | none (interactive waits for Enter) | `--duration <min>` | `SessionConfig.duration_min` |
-| **Snapshot mode** | Which snapshot triggers are active | `3` (both) | `--snap-mode {1,2,3}` | `SessionConfig.snap_mode` |
-| **Auto interval** | Minutes between automatic snapshots | `5` | `--auto-interval <min>` | `SessionConfig.auto_interval_min` |
-| **Perf loop interval** | Seconds between continuous CPU+memory samples | `10` | *(no CLI flag)* | `config.py → PERF_LOOP_INTERVAL_SEC`, or `"perf_interval_sec"` in a JSON config |
-
-**Snapshot mode values:**
-- `1` = **auto only** — snapshots on the timer (`--auto-interval`)
-- `2` = **manual only** — snapshots only when you trigger them (timer disabled)
-- `3` = **both** — timer + manual
-
-> Note: at short durations you get **no auto-snapshots**. With the default 5-min
-> interval, a run shorter than 5 minutes produces only `baseline-idle` and
-> `session-end`. For a real trend, run ≥15 min or lower `--auto-interval`.
-
----
-
-## 4. What snapshots get taken
-
-A "snapshot" is a labelled, point-in-time capture: full `dumpsys meminfo` +
-CPU sample → parsed into total PSS, native/dalvik/java heap, graphics, GL mtrack,
-swap, and CPU%. Written to `snapshot_<label>.txt` and appended to
-`snapshots_summary.json`.
-
-Every run **always** takes two, regardless of mode:
-- `baseline-idle` — just after launch (Step 7)
-- `session-end` — at the end of the window (Step 11)
-
-Plus, depending on mode:
-- **Auto** — `auto_<n>_at_<HHMMSS>` every `--auto-interval` minutes
-- **Manual** — fire one any time from another terminal:
-  ```bash
-  echo "after-login" > /tmp/perf_snapshot_trigger_<serial>
-  ```
-  (The exact path is printed when the run starts; the serial is appended so
-  parallel runs don't collide.)
-
-Separately, a **continuous CPU+memory loop** writes to `perf_stats.txt` every
-`perf_interval_sec` (10s) for the whole run — that's not a snapshot, just a
-background time series.
-
----
-
-## 5. Battery — what you actually get
-
-This is the most misunderstood part, so read this before reading Section 5/9 of
-any report.
-
-**While a device is on USB it is charging**, so *absolute mAh drain*
-(`charge_start − charge_end`) cannot be measured directly. To work around this,
-the framework runs `dumpsys battery unplug` at the start (`simulate_unplug`,
-on by default). That makes batterystats **accrue on-battery accounting**
-(screen/CPU/GPS/camera events) even while tethered, and sets `was_charging=False`.
-
-So on a normal run you **do** get: GPS activations, camera sessions, temperature,
-WorkManager/Firebase job counts. You do **not** get true physical mAh drain —
-for that, use wireless adb (see below).
-
-**Report behaviour (v4.2, patched):**
-- The "Battery Testing — Approach & Methodology" section now only appears when
-  drain data is genuinely **unavailable** (device counted as charging, or the
-  unplug simulation failed). On a normal simulated-unplug run it is **omitted**
-  and the Performance Scorecard becomes Section 9. This removes the old
-  always-on battery lecture.
-- Toggle: the gate lives in `report/generator.py` — search for
-  `drain_unavailable`. Force it on with `drain_unavailable = True`.
-
-**Flags:**
-- `--no-unplug` — skip the unplug simulation (then drain is unavailable and the
-  methodology section returns)
-- `--bugreport` — also capture `bugreport.zip` for Battery Historian
-
-**For true mAh drain — wireless adb:**
+Trigger files are now namespaced by serial so parallel runs never collide:
 ```bash
-adb tcpip 5555
-adb connect <device-ip>:5555
-# unplug USB, then run the framework over wifi with --duration
+echo "after-login"  > /tmp/perf_snapshot_trigger_RZ8N1234
+echo "camera-open"  > /tmp/perf_snapshot_trigger_RZ8N1234
 ```
+The exact path for a run is printed at startup and stored in `session_config.json`.
 
 ---
 
-## 6. LLM analysis (optional)
+### `--config` JSON (unattended)
 
-Your last report showed *"LLM analysis not available — check API key"* — that's
-just a missing key, not a bug. Set one and Sections 7 & 8 fill in:
-
-```bash
-export ANTHROPIC_API_KEY=sk-ant-...      # default provider
-# or choose another provider:
-export PERF_LLM_PROVIDER=openai
-export OPENAI_API_KEY=sk-...
-```
-Providers and model strings live in `config.py` (`LLM_PROVIDER`, `LLM_MODELS`).
-Skip LLM entirely with `--no-llm`. Without a key, recommendations are still
-generated rule-based.
-
----
-
-## 7. All CLI flags
-
-| Flag | Meaning |
-|------|---------|
-| `--package <name>` | App package (required unattended) |
-| `--serial <id>` | Target device (auto if only one connected) |
-| `--activity <name>` | Main activity (auto-detected if omitted) |
-| `--duration <min>` | Unattended capture length; implies non-interactive |
-| `--noninteractive` | No prompts (needs `--package` + `--duration`) |
-| `--snap-mode {1,2,3}` | auto / manual / both |
-| `--auto-interval <min>` | Minutes between auto snapshots |
-| `--no-llm` | Skip LLM analysis |
-| `--no-unplug` | Skip simulated battery unplug |
-| `--bugreport` | Capture bugreport.zip |
-| `--llm-provider {anthropic,gemini,openai}` | Override provider |
-| `--config <file.json>` | Load a JSON session config |
-| `--output-root <dir>` | Override output location |
-
-**Config precedence (low → high):** defaults → JSON `--config` → environment →
-CLI flags. So a CLI flag always wins.
-
-### Example JSON config
 ```json
 {
-  "package": "com.example.package",
-  "serial": "emulator-5554",
+  "package": "com.example.app",
   "duration_min": 30,
-  "snap_mode": 3,
+  "snap_mode": 1,
   "auto_interval_min": 5,
-  "perf_interval_sec": 10,
+  "cold_warm_runs": 3,
   "simulate_unplug": true,
-  "use_llm": true
+  "use_llm": true,
+  "llm_provider": "anthropic"
 }
 ```
-```bash
-python3 framework.py --config runs/nonprod.json
+Precedence (low → high): **defaults < JSON config < environment < CLI flags**.
+
+---
+
+### Battery measurement over USB
+
+A tethered device is charging, which normally voids drain accounting. By default
+v4.2 runs `dumpsys battery unplug` (reporting on-battery state for stats) and
+restores real state with `dumpsys battery reset` in a `finally` block. This makes
+drain **accounting** valid; absolute mAh is still approximate because the cell is
+physically charging. For true physical drain, use wireless adb
+(`adb tcpip 5555` / pairing) and pass `--no-unplug`.
+
+---
+
+### Output
+
+`~/Desktop/PerfFramework_Output/<app>_<serial>_<timestamp>/`
+
+```
+PerfReport_<app>_<ts>.docx     ← Word report (10 sections, colour-coded)
+perf_stats.txt                 ← CPU (device-wide %) + memory timeline
+snapshot_*.txt                 ← individual labelled snapshots
+snapshots_summary.json         ← structured snapshot data (+ cpu source)
+gps_camera_logs.txt            ← GPS / camera events
+network_calls.txt              ← network / API / SDK events
+app_logs.txt                   ← full logcat
+battery_stats.txt              ← batterystats dump
+session_config.json            ← the resolved SessionConfig for this run
+raw_data.json                  ← all collected data
 ```
 
 ---
 
-## 8. Output files
-
-Written to `~/Desktop/PerfFramework_Output/<app>_<serial>_<timestamp>/`:
-
-| File | Contents |
-|------|----------|
-| `PerfReport_<app>_<date>.docx` | The formatted report |
-| `snapshot_<label>.txt` | Each snapshot's raw meminfo + CPU |
-| `snapshots_summary.json` | Parsed metrics for every snapshot |
-| `perf_stats.txt` | Continuous CPU+memory time series |
-| `gps_camera_logs.txt` / `network_calls.txt` / `app_logs.txt` | Filtered logcat streams |
-| `battery_stats.txt` | Raw `dumpsys batterystats` |
-| `session_config.json` | Exact config used for the run |
-| `raw_data.json` | Everything fed to the report/LLM |
-
----
-
-## 9. Troubleshooting
-
-| Symptom | Cause & fix |
-|---------|-------------|
-| **"It only ran 2 minutes"** | Interactive mode ran until Enter was pressed. Use `--duration 30` for a fixed window, or just leave it open longer. |
-| **Battery/GPS/camera tables all zero** | (a) Nothing drove the app — the framework only observes, you must interact; (b) it's an **emulator** (fake battery, empty hardware rails) — use a real device; (c) run was too short for events to accrue. |
-| **No `auto_*` snapshots** | Run was shorter than `--auto-interval` (default 5 min). Lengthen the run or lower the interval. |
-| **CPU max freq shows `0.0 GHz`** | Emulator/kernel restricts `cpufreq` sysfs. Cosmetic; expected on emulators. |
-| **Idle CPU flagged POOR (~18%)** | Baseline snapshot caught app startup churn. Take baseline after the app settles, or judge idle from a later low-activity snapshot. |
-| **"LLM analysis not available"** | No API key. `export ANTHROPIC_API_KEY=...` or run `--no-llm`. |
-| **Battery methodology page appearing when not needed** | Fixed in v4.2 — it's now gated on `drain_unavailable` in `report/generator.py`. |
-| **"more than one device"** | Pass `--serial <id>`, or use `run_parallel.py`. |
-
----
-
-## 10. Project layout
+### File structure
 
 ```
-android-perf_framework/
-├── framework.py            # Orchestrator + CLI + interactive flow
-├── run_parallel.py         # Fan out across all connected devices
-├── config.py               # Defaults, benchmarks, SessionConfig  ← edit knobs here
+perf_framework/
+├── framework.py          ← orchestrator; run_session() + CLI
+├── run_parallel.py       ← multi-device fan-out launcher
+├── config.py             ← constants, benchmarks, SessionConfig (layered)
 ├── core/
-│   └── adb.py              # Serial-bound adb command layer
+│   └── adb.py            ← serial-bound ADB command layer + device resolution
 ├── modules/
-│   ├── device.py           # Device profile + suitability score
-│   ├── start_time.py       # Cold / warm start measurement
-│   ├── sampling.py         # CPU + meminfo parsing (single source of truth)
-│   ├── capture.py          # Continuous CPU/mem loop + logcat streams
-│   ├── snapshots.py        # Auto + manual snapshot engine
-│   ├── battery.py          # batterystats capture + simulated unplug
-│   └── network.py          # SDK detection + redundant-call analysis
+│   ├── sampling.py       ← shared CPU (cpuinfo) + meminfo parsers
+│   ├── device.py         ← device profile & suitability
+│   ├── start_time.py     ← cold / warm (true) / hot start
+│   ├── capture.py        ← CPU+mem loop + in-process logcat filtering
+│   ├── snapshots.py      ← auto + per-device-triggered snapshots
+│   ├── battery.py        ← batterystats + simulated-unplug
+│   └── network.py        ← SDK detection & redundancy analysis
 ├── analysis/
-│   ├── llm_analyser.py     # Anthropic / Gemini / OpenAI integration
-│   └── benchmarks.py       # Threshold helpers
+│   ├── llm_analyser.py   ← narrative + structured JSON (anthropic/gemini/openai)
+│   └── benchmarks.py     ← Android Vitals thresholds
 └── report/
-    └── generator.py        # Word report builder  ← battery-section gate here
+    └── generator.py      ← Word report builder (10 sections)
 ```
 
-### "How do I…" quick reference
-| I want to… | Edit |
-|------------|------|
-| Change default capture cadence | `config.py → PERF_LOOP_INTERVAL_SEC` |
-| Change default auto-snapshot interval | `config.py → SessionConfig.auto_interval_min` |
-| Change benchmark thresholds | `config.py → BENCHMARKS` |
-| Change LLM provider/model | `config.py → LLM_PROVIDER`, `LLM_MODELS` |
-| Always/never show battery methodology | `report/generator.py → drain_unavailable` |
-| Change report colours/branding | `report/generator.py` top constants |
+---
+
+### Notes / known limitations
+
+- The framework does **not** drive the UI. Pair it with your automation, which
+  runs independently against the same device(s).
+- GPS/camera counts from `batterystats` are **indicative** — the `+gps`/`+camera`
+  history markers are OEM/version-dependent. Treat them as signals, not ground truth.
+- CPU% is reported device-wide (0–100 across the SoC), which is what the benchmarks
+  in `config.py` assume.
