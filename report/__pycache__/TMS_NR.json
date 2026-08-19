@@ -1,0 +1,2246 @@
+{
+  "name": "Monthly Performance Trend Report",
+  "description": "Monthly performance, capacity planning, OOM tracking, health scorecard. Account: 0 | Cluster: aks-cargoestms-prod",
+  "permissions": "PUBLIC_READ_WRITE",
+  "pages": [
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTQ",
+      "name": "1. Executive Health Scorecard",
+      "description": "Stakeholder KPIs with month-over-month comparison",
+      "widgets": [
+        {
+          "id": "40860183",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 1
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "# Monthly Account Health Scorecard\nThresholds: Green = healthy, Yellow = warning, Red = critical. Throughput and Apdex show month-over-month comparison (up = good). Response time and error rate use absolute thresholds (lower = better)."
+          }
+        },
+        {
+          "id": "40860184",
+          "title": "Throughput (RPM) vs Last Month",
+          "layout": {
+            "column": 1,
+            "row": 2,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) AS 'RPM' FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860185",
+          "title": "Avg Response Time (s)",
+          "layout": {
+            "column": 4,
+            "row": 2,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(duration) AS 'Avg (s)' FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholdsWithSeriesOverrides": {
+              "thresholds": [
+                {
+                  "severity": "success",
+                  "to": 2
+                },
+                {
+                  "from": 2,
+                  "severity": "warning",
+                  "to": 5
+                },
+                {
+                  "from": 5,
+                  "severity": "critical"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "40860186",
+          "title": "Error Rate %",
+          "layout": {
+            "column": 7,
+            "row": 2,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT percentage(count(*), WHERE error IS true) AS 'Error %' FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholdsWithSeriesOverrides": {
+              "thresholds": [
+                {
+                  "severity": "success",
+                  "to": 2
+                },
+                {
+                  "from": 2,
+                  "severity": "warning",
+                  "to": 5
+                },
+                {
+                  "from": 5,
+                  "severity": "critical"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "id": "40860187",
+          "title": "Apdex Score vs Last Month",
+          "layout": {
+            "column": 10,
+            "row": 2,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT apdex(duration, 0.5) AS 'Apdex' FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860188",
+          "title": "Service Health Scorecard",
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 12,
+            "height": 5
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) AS 'RPM', average(duration) AS 'Avg (s)', percentile(duration, 95) AS 'P95 (s)', percentage(count(*), WHERE error IS true) AS 'Error %', apdex(duration, 0.5) AS 'Apdex' FROM Transaction FACET appName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860189",
+          "title": "Top 5 Services at Risk (Highest Error Rate)",
+          "layout": {
+            "column": 1,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT percentage(count(*), WHERE error IS true) AS 'Error %', average(duration) AS 'Avg (s)', rate(count(*), 1 minute) AS 'RPM' FROM Transaction FACET appName SINCE 1 month ago LIMIT 5"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860190",
+          "title": "Top 5 Over-Provisioned Services (Low CPU Utilization)",
+          "layout": {
+            "column": 7,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(cpuCoresUtilization) AS 'Avg CPU %', average(memoryUtilization) AS 'Avg Mem %', max(cpuCoresUtilization) AS 'Peak CPU %', max(memoryUtilization) AS 'Peak Mem %' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND cpuCoresUtilization IS NOT NULL FACET containerName SINCE 1 month ago LIMIT 5"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860191",
+          "title": "Throughput Trend (This Month vs Last Month)",
+          "layout": {
+            "column": 1,
+            "row": 12,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago TIMESERIES 1 day"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860192",
+          "title": "Response Time Trend (This Month vs Last Month)",
+          "layout": {
+            "column": 7,
+            "row": 12,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration) FROM Transaction SINCE 1 month ago COMPARE WITH 1 month ago TIMESERIES 1 day"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860193",
+          "title": "OOMKill Events (Month)",
+          "layout": {
+            "column": 1,
+            "row": 15,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'OOMKills' FROM InfrastructureEvent WHERE event.reason = 'OOMKilling' AND clusterName = 'aks-cargoestms-prod' SINCE 1 month ago"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 1
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 10
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860194",
+          "title": "Near-OOM Pods (Mem > 90%)",
+          "layout": {
+            "column": 4,
+            "row": 15,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT uniqueCount(podName) AS 'Pods > 90% Mem' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND memoryUtilization > 90 SINCE 1 month ago"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 3
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 10
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860195",
+          "title": "CPU Throttled Services (>95%)",
+          "layout": {
+            "column": 7,
+            "row": 15,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT uniqueCount(containerName) AS 'Throttled' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND cpuCoresUtilization > 95 SINCE 1 month ago"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 2
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 5
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860196",
+          "title": "Container Restarts (Top Service)",
+          "layout": {
+            "column": 10,
+            "row": 15,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT latest(restartCount) - earliest(restartCount) AS 'Restarts' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago LIMIT 1"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 10
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 50
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTU",
+      "name": "2. Capacity Planning & Right-Sizing",
+      "description": "CPU and Memory requested vs actual usage, efficiency analysis",
+      "widgets": [
+        {
+          "id": "40860197",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Capacity Planning and Right-Sizing Analysis\n| Utilization Band | Status | Action |\n|---|---|---|\n| Below 30% | Over-provisioned | Reduce resource requests to save cost |\n| 30% - 70% | Healthy | No action needed |\n| 70% - 85% | Watch | Monitor closely, may need scaling |\n| Above 85% | At Risk | Increase limits or scale out to prevent OOM/throttling |"
+          }
+        },
+        {
+          "id": "40860198",
+          "title": "CPU Right-Sizing: Requested vs Actual (All Services)",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 12,
+            "height": 5
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(cpuRequestedCores) AS 'CPU Requested (cores)', average(cpuUsedCores) AS 'Avg CPU Used (cores)', max(cpuUsedCores) AS 'Peak CPU Used (cores)', average(cpuUsedCores) / average(cpuRequestedCores) * 100 AS 'CPU Util %', average(cpuLimitCores) AS 'CPU Limit (cores)' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND cpuRequestedCores > 0 FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860199",
+          "title": "Memory Right-Sizing: Requested vs Actual (All Services)",
+          "layout": {
+            "column": 1,
+            "row": 8,
+            "width": 12,
+            "height": 5
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(memoryRequestedBytes) / 1048576 AS 'Mem Requested (MB)', average(memoryWorkingSetBytes) / 1048576 AS 'Avg Mem Used (MB)', max(memoryWorkingSetBytes) / 1048576 AS 'Peak Mem Used (MB)', average(memoryWorkingSetBytes) / average(memoryRequestedBytes) * 100 AS 'Mem Util %', average(memoryLimitBytes) / 1048576 AS 'Mem Limit (MB)' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND memoryRequestedBytes > 0 FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860200",
+          "title": "CPU Utilization % Trend (Top 10)",
+          "layout": {
+            "column": 1,
+            "row": 13,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(cpuCoresUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860201",
+          "title": "Memory Utilization % Trend (Top 10)",
+          "layout": {
+            "column": 7,
+            "row": 13,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(memoryUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860202",
+          "title": "CPU Efficiency: Services by Utilization Band",
+          "layout": {
+            "column": 1,
+            "row": 16,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT uniqueCount(containerName) FROM K8sContainerSample WHERE clusterName = 'aks-tms-prod' AND cpuRequestedCores > 0 FACET CASES(WHERE cpuCoresUtilization < 30 AS 'Over-provisioned (<30%)', WHERE cpuCoresUtilization >= 30 AND cpuCoresUtilization < 70 AS 'Healthy (30-70%)', WHERE cpuCoresUtilization >= 70 AND cpuCoresUtilization < 85 AS 'Watch (70-85%)', WHERE cpuCoresUtilization >= 85 AS 'At Risk (>85%)') SINCE 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860203",
+          "title": "Memory Efficiency: Services by Utilization Band",
+          "layout": {
+            "column": 7,
+            "row": 16,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT uniqueCount(containerName) FROM K8sContainerSample WHERE clusterName = 'aks-tms-prod' AND memoryRequestedBytes > 0 FACET CASES(WHERE memoryUtilization < 30 AS 'Over-provisioned (<30%)', WHERE memoryUtilization >= 30 AND memoryUtilization < 70 AS 'Healthy (30-70%)', WHERE memoryUtilization >= 70 AND memoryUtilization < 85 AS 'Watch (70-85%)', WHERE memoryUtilization >= 85 AS 'At Risk (>85%)') SINCE 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40861668",
+          "title": "All Services: CPU Utilization Detail",
+          "layout": {
+            "column": 1,
+            "row": 20,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(cpuCoresUtilization) AS 'Avg CPU %', max(cpuCoresUtilization) AS 'Peak CPU %' FROM K8sContainerSample WHERE clusterName = 'aks-tms-prod' AND cpuRequestedCores > 0 FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40861708",
+          "title": "All Services: Memory Utilization Detail",
+          "layout": {
+            "column": 7,
+            "row": 20,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(memoryUtilization) AS 'Avg Mem %', max(memoryUtilization) AS 'Peak Mem %' FROM K8sContainerSample WHERE clusterName = 'aks-tms-prod' AND memoryRequestedBytes > 0 FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTY",
+      "name": "3. OOM & Stability Analysis",
+      "description": "OOMKill events, memory pressure, restart correlation",
+      "widgets": [
+        {
+          "id": "40860204",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## OOM Kills, Near-OOM Events and Container Stability\nCorrelates memory pressure with container restarts to identify services at risk of instability.\n\n**Restart Count Notes:** Positive values = container restarts during the month. Negative values = the service was redeployed onto fresh pods during the month (the previous pod had accumulated restarts, the new pod started at 0). Negative values typically indicate a deployment occurred and the service is now running cleanly."
+          }
+        },
+        {
+          "id": "40860205",
+          "title": "Total OOMKill Events",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'OOMKills' FROM InfrastructureEvent WHERE event.reason = 'OOMKilling' AND clusterName = 'aks-cargoestms-prod' SINCE 1 month ago"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 1
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 10
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860206",
+          "title": "Unique Pods OOMKilled",
+          "layout": {
+            "column": 4,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT uniqueCount(event.involvedObject.name) AS 'Pods' FROM InfrastructureEvent WHERE event.reason = 'OOMKilling' AND clusterName = 'aks-cargoestms-prod' SINCE 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860207",
+          "title": "Containers Near OOM (>90% Mem)",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT uniqueCount(containerName) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND memoryUtilization > 90 SINCE 1 month ago"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 3
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 10
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860208",
+          "title": "Total Container Restarts (Month)",
+          "layout": {
+            "column": 10,
+            "row": 3,
+            "width": 3,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT latest(restartCount) - earliest(restartCount) AS 'Restarts' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago LIMIT 1"
+              }
+            ],
+            "thresholds": [
+              {
+                "alertSeverity": "WARNING",
+                "value": 10
+              },
+              {
+                "alertSeverity": "CRITICAL",
+                "value": 50
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860209",
+          "title": "OOMKill Events Over Time",
+          "layout": {
+            "column": 1,
+            "row": 5,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) FROM InfrastructureEvent WHERE event.reason = 'OOMKilling' AND clusterName = 'aks-cargoestms-prod' FACET event.involvedObject.name SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860210",
+          "title": "Peak Memory % for Services with Restarts",
+          "layout": {
+            "column": 1,
+            "row": 8,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(memoryUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND restartCount > 0 FACET containerName SINCE 1 month ago TIMESERIES 1 day LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860211",
+          "title": "Restart Count by Service (Monthly)",
+          "layout": {
+            "column": 7,
+            "row": 8,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT latest(restartCount) - earliest(restartCount) AS 'Restarts' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago LIMIT 15"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860212",
+          "title": "OOM Risk Assessment (All Services)",
+          "layout": {
+            "column": 1,
+            "row": 11,
+            "width": 12,
+            "height": 5
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(memoryUtilization) AS 'Peak Mem %', average(memoryUtilization) AS 'Avg Mem %', average(memoryLimitBytes) / 1048576 AS 'Mem Limit (MB)', max(memoryWorkingSetBytes) / 1048576 AS 'Peak Mem Used (MB)', latest(restartCount) - earliest(restartCount) AS 'Restarts (Monthly)' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' AND memoryUtilization IS NOT NULL FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860213",
+          "title": "K8s Events Breakdown by Type",
+          "layout": {
+            "column": 1,
+            "row": 16,
+            "width": 4,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.pie"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) FROM InfrastructureEvent WHERE clusterName = 'aks-cargoestms-prod' AND event.reason IN ('OOMKilling', 'Evicted', 'BackOff', 'FailedScheduling', 'Unhealthy', 'FailedMount', 'FailedCreate', 'Killing') FACET event.reason SINCE 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860214",
+          "title": "K8s Events by Service and Type",
+          "layout": {
+            "column": 5,
+            "row": 16,
+            "width": 8,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'Events' FROM InfrastructureEvent WHERE clusterName = 'aks-cargoestms-prod' AND event.reason IN ('OOMKilling', 'Evicted', 'BackOff', 'FailedScheduling', 'Unhealthy', 'FailedMount', 'FailedCreate', 'Killing') FACET event.involvedObject.name, event.reason SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTc",
+      "name": "4. APM Performance & External Services",
+      "description": "Throughput, response time, errors, P95, and external dependency performance",
+      "widgets": [
+        {
+          "id": "40860215",
+          "title": "Top 10 APIs by Throughput (RPM)",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) FROM Transaction FACET name SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860216",
+          "title": "Top 10 Slowest APIs (Avg seconds)",
+          "layout": {
+            "column": 7,
+            "row": 1,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration) FROM Transaction FACET name SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860217",
+          "title": "Throughput Trend by Service (RPM)",
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) FROM Transaction FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860218",
+          "title": "Avg Response Time Trend by Service (s)",
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration) FROM Transaction FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860219",
+          "title": "Error Rate Trend by Service (%)",
+          "layout": {
+            "column": 1,
+            "row": 10,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT percentage(count(*), WHERE error IS true) FROM Transaction FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860220",
+          "title": "Top 10 APIs: Avg, P95, RPM",
+          "layout": {
+            "column": 1,
+            "row": 13,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration) AS 'Avg (s)', percentile(duration, 95) AS 'P95 (s)', rate(count(*), 1 minute) AS 'RPM' FROM Transaction FACET name SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860221",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 16,
+            "width": 12,
+            "height": 1
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "### External Service Calls\nShows time spent in external HTTP calls per transaction. External duration is the portion of total response time spent waiting for downstream services."
+          }
+        },
+        {
+          "id": "40860222",
+          "title": "Avg External Duration per Txn (s)",
+          "layout": {
+            "column": 1,
+            "row": 17,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(externalDuration) AS 'Avg External (s)' FROM Transaction WHERE externalDuration IS NOT NULL SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860223",
+          "title": "Max External Duration in Single Txn (s)",
+          "layout": {
+            "column": 5,
+            "row": 17,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT max(externalDuration) AS 'Max External (s)' FROM Transaction WHERE externalDuration IS NOT NULL SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860224",
+          "title": "External Span Count",
+          "layout": {
+            "column": 9,
+            "row": 17,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT count(*) FROM Span WHERE span.kind = 'client' AND http.url IS NOT NULL SINCE 1 month ago COMPARE WITH 1 month ago"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860225",
+          "title": "Top 10 Transactions with Highest External Duration",
+          "layout": {
+            "column": 1,
+            "row": 19,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(externalDuration) AS 'Avg External (s)', average(duration) AS 'Avg Total (s)', count(*) AS 'Calls' FROM Transaction WHERE externalDuration IS NOT NULL FACET name, appName SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860226",
+          "title": "Top 10 External Hosts by Volume and Latency (Spans)",
+          "layout": {
+            "column": 7,
+            "row": 19,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'Calls', average(duration.ms) AS 'Avg (ms)', percentile(duration.ms, 95) AS 'P95 (ms)' FROM Span WHERE span.kind = 'client' AND http.url IS NOT NULL FACET server.address, appName SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860227",
+          "title": "External Duration Trend by Service (s)",
+          "layout": {
+            "column": 1,
+            "row": 23,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(externalDuration) FROM Transaction WHERE externalDuration IS NOT NULL FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 10"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTg",
+      "name": "5. K8s Infrastructure & Restarts",
+      "description": "Container restarts per service, HPA scaling, CPU and Memory",
+      "widgets": [
+        {
+          "id": "40860228",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Container Restarts, HPA Scaling, CPU and Memory\nRestart counts: latest(restartCount) minus earliest(restartCount) per service within the month.\n\n**Negative values** indicate the service was redeployed during the month. The old pod had accumulated restarts, and the new pod started fresh at 0. This is normal for services with regular deployments and indicates improved stability."
+          }
+        },
+        {
+          "id": "40860229",
+          "title": "Restarts by Service (Monthly)",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT latest(restartCount) - earliest(restartCount) AS 'Restarts' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860230",
+          "title": "Restart Detail by Service and Pod",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 6,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(restartCount) AS 'Restarts (This Pod)', latest(restartCount) AS 'Current Count' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName, podName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860231",
+          "title": "HPA: Desired vs Current Replicas",
+          "layout": {
+            "column": 1,
+            "row": 7,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT latest(desiredReplicas) FROM K8sHpaSample WHERE clusterName = 'aks-tms-prod' FACET displayName SINCE 1 month ago TIMESERIES 2 hours LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860232",
+          "title": "HPA Scaling Summary",
+          "layout": {
+            "column": 1,
+            "row": 10,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT min(currentReplicas) AS 'Min Replicas', max(currentReplicas) AS 'Max Replicas', max(currentReplicas) - min(currentReplicas) AS 'Scale Range', max(maxReplicas) AS 'HPA Max Limit', latest(desiredReplicas) AS 'Current Desired' FROM K8sHpaSample WHERE clusterName = 'aks-tms-prod' FACET displayName SINCE 1 month ago LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40861787",
+          "title": "HPA Scale Range by Service (Higher = More Scaling Activity)",
+          "layout": {
+            "column": 7,
+            "row": 10,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT max(currentReplicas) - min(currentReplicas) AS 'Scale Range' FROM K8sHpaSample WHERE clusterName = 'aks-tms-prod' FACET displayName SINCE 1 month ago LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860233",
+          "title": "CPU Utilization % by Service",
+          "layout": {
+            "column": 1,
+            "row": 13,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(cpuCoresUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860234",
+          "title": "Memory Utilization % by Service",
+          "layout": {
+            "column": 7,
+            "row": 13,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(memoryUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860235",
+          "title": "Peak CPU, Memory and Restarts by Service",
+          "layout": {
+            "column": 1,
+            "row": 16,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(cpuCoresUtilization) AS 'Peak CPU %', average(cpuCoresUtilization) AS 'Avg CPU %', max(memoryUtilization) AS 'Peak Mem %', average(memoryUtilization) AS 'Avg Mem %', latest(restartCount) - earliest(restartCount) AS 'Restarts (Monthly)' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago LIMIT 40"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MTk",
+      "name": "6. Database Performance",
+      "description": "DB duration from Transaction events, query-level detail from Span events",
+      "widgets": [
+        {
+          "id": "40860236",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 1
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Database Performance\nDB time from APM Transaction events (databaseDuration attribute). Query-level detail from Span events (requires distributed tracing). If Span queries are empty, verify distributed tracing is enabled on your agents."
+          }
+        },
+        {
+          "id": "40860237",
+          "title": "Avg DB Time per Transaction (s)",
+          "layout": {
+            "column": 1,
+            "row": 2,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(databaseDuration) AS 'Avg DB Time (s)' FROM Transaction WHERE databaseDuration IS NOT NULL SINCE 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860238",
+          "title": "Max DB Time in Single Txn (s)",
+          "layout": {
+            "column": 5,
+            "row": 2,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(databaseDuration) AS 'Max DB Time (s)' FROM Transaction WHERE databaseDuration IS NOT NULL SINCE 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860239",
+          "title": "DB Span Count",
+          "layout": {
+            "column": 9,
+            "row": 2,
+            "width": 4,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.billboard"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'DB Spans' FROM Span WHERE db.statement IS NOT NULL SINCE 1 month ago"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860240",
+          "title": "Top 10 Slowest DB Queries (from Spans)",
+          "layout": {
+            "column": 1,
+            "row": 4,
+            "width": 12,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration.ms) AS 'Avg (ms)', max(duration.ms) AS 'Max (ms)', count(*) AS 'Calls' FROM Span WHERE db.statement IS NOT NULL FACET db.statement, appName SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860241",
+          "title": "Top 10 Most Frequent DB Queries (from Spans)",
+          "layout": {
+            "column": 1,
+            "row": 8,
+            "width": 12,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT count(*) AS 'Total Calls', average(duration.ms) AS 'Avg (ms)', percentile(duration.ms, 95) AS 'P95 (ms)' FROM Span WHERE db.statement IS NOT NULL FACET db.statement, appName SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860242",
+          "title": "DB Duration Trend by Service (s)",
+          "layout": {
+            "column": 1,
+            "row": 12,
+            "width": 12,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(databaseDuration) FROM Transaction WHERE databaseDuration IS NOT NULL FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 10"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MjA",
+      "name": "7. Runtime Performance (Java / Node.js)",
+      "description": "Heap, GC, threads (Java) and event loop, RSS (Node.js)",
+      "widgets": [
+        {
+          "id": "40860243",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 2
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Runtime VM Performance\nShows heap usage, garbage collection, and runtime-specific metrics.\n- **Java services**: Heap, GC pause, thread count via JVM metrics\n- **Node.js services**: Heap, GC pause, physical RSS, event loop via V8 metrics\n\nCharts auto-filter by runtime. Java-only metrics are empty for Node.js services and vice versa.\nDiagnostic query: `SELECT uniques(metricTimesliceName) FROM Metric WHERE appName = 'YOUR_APP' AND metricTimesliceName LIKE 'Memory/%' SINCE 1 day ago`"
+          }
+        },
+        {
+          "id": "40860244",
+          "title": "Heap Used (MB) - All Services",
+          "layout": {
+            "column": 1,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(apm.service.memory.heap.used) / 1048576 AS 'Heap Used MB' FROM Metric WHERE entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860245",
+          "title": "Heap Utilization % - All Services",
+          "layout": {
+            "column": 7,
+            "row": 3,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT max(apm.service.memory.heap.used) / 1048576 AS 'Peak Heap MB', average(apm.service.memory.heap.used) / 1048576 AS 'Avg Heap MB' FROM Metric WHERE entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        },
+        {
+          "id": "40860246",
+          "title": "GC Pause Time - All Services",
+          "layout": {
+            "column": 1,
+            "row": 6,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT rate(sum(newrelic.timeslice.value), 1 minute) * 1000 FROM Metric WHERE metricTimesliceName LIKE 'GC/%' AND entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860247",
+          "title": "Java: Thread Count (Runnable)",
+          "layout": {
+            "column": 7,
+            "row": 6,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(newrelic.timeslice.value) FROM Metric WHERE metricTimesliceName = 'Threads/SummaryState/RUNNABLE/Count' AND entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860248",
+          "title": "Node.js: Physical Memory / RSS (MB)",
+          "layout": {
+            "column": 1,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(newrelic.timeslice.value) AS 'RSS MB' FROM Metric WHERE metricTimesliceName = 'Memory/Physical' FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860249",
+          "title": "Node.js: Event Loop Max CPU (ms/tick)",
+          "layout": {
+            "column": 7,
+            "row": 9,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(newrelic.timeslice.value) * 1000 AS 'Max ms/tick' FROM Metric WHERE metricTimesliceName = 'Nodejs/EventLoop/Maximum/Duration' FACET appName SINCE 1 month ago TIMESERIES 1 day LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860250",
+          "title": "Runtime Summary by Service",
+          "layout": {
+            "column": 1,
+            "row": 12,
+            "width": 12,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "facet": {
+              "showOtherSeries": false
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(newrelic.timeslice.value) AS 'Avg Heap (MB or %)' \nFROM Metric WHERE appName IS NOT NULL \nAND metricTimesliceName IN ('Memory/Heap/Used', 'Memory/Heap/Utilization') \nFACET appName, metricTimesliceName SINCE 1 month ago LIMIT 40"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            }
+          }
+        }
+      ]
+    },
+    {
+      "guid": "NDUxNjIzN3xWSVp8REFTSEJPQVJEfDI4OTU4MjE",
+      "name": "8. Per-Service Deep Dive",
+      "description": "Filter by appName to drill into a single service across all metrics",
+      "widgets": [
+        {
+          "id": "40860251",
+          "title": "",
+          "layout": {
+            "column": 1,
+            "row": 1,
+            "width": 12,
+            "height": 1
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.markdown"
+          },
+          "rawConfiguration": {
+            "text": "## Per-Service Deep Dive\nUse the dashboard filter bar at the top to add a filter on `appName` or `containerName` and drill into a single service. All widgets below will filter accordingly."
+          }
+        },
+        {
+          "id": "40860252",
+          "title": "Top 10 APIs by Throughput",
+          "layout": {
+            "column": 1,
+            "row": 2,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.bar"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT rate(count(*), 1 minute) FROM Transaction FACET name SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860253",
+          "title": "Top 10 APIs: Avg and P95 Response Time",
+          "layout": {
+            "column": 7,
+            "row": 2,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration) AS 'Avg (s)', percentile(duration, 95) AS 'P95 (s)', rate(count(*), 1 minute) AS 'RPM' FROM Transaction FACET name SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860254",
+          "title": "Container Restarts by Pod",
+          "layout": {
+            "column": 1,
+            "row": 5,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT max(restartCount) AS 'Restarts' FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName, podName SINCE 1 month ago LIMIT 20"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860255",
+          "title": "HPA: Desired vs Current Replicas",
+          "layout": {
+            "column": 7,
+            "row": 5,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT latest(desiredReplicas), latest(currentReplicas) FROM K8sHpaSample WHERE clusterName = 'aks-tms-prod' FACET displayName SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860256",
+          "title": "CPU Utilization %",
+          "layout": {
+            "column": 1,
+            "row": 8,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(cpuCoresUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860257",
+          "title": "Memory Utilization %",
+          "layout": {
+            "column": 7,
+            "row": 8,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(memoryUtilization) FROM K8sContainerSample WHERE clusterName = 'aks-cargoestms-prod' FACET containerName SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860258",
+          "title": "Top 10 DB Queries by Duration (Spans)",
+          "layout": {
+            "column": 1,
+            "row": 11,
+            "width": 12,
+            "height": 4
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.table"
+          },
+          "rawConfiguration": {
+            "nrqlQueries": [
+              {
+                "accountId": 4516237,
+                "query": "SELECT average(duration.ms) AS 'Avg (ms)', percentile(duration.ms, 95) AS 'P95 (ms)', count(*) AS 'Calls' FROM Span WHERE db.statement IS NOT NULL FACET db.statement SINCE 1 month ago LIMIT 10"
+              }
+            ]
+          }
+        },
+        {
+          "id": "40860259",
+          "title": "Heap Used (MB)",
+          "layout": {
+            "column": 1,
+            "row": 15,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT average(apm.service.memory.heap.used) / 1048576 FROM Metric WHERE entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        },
+        {
+          "id": "40860260",
+          "title": "GC Pause Time",
+          "layout": {
+            "column": 7,
+            "row": 15,
+            "width": 6,
+            "height": 3
+          },
+          "linkedEntityGuids": null,
+          "visualization": {
+            "id": "viz.line"
+          },
+          "rawConfiguration": {
+            "chartStyles": {
+              "lineInterpolation": "linear"
+            },
+            "facet": {
+              "showOtherSeries": false
+            },
+            "legend": {
+              "enabled": true
+            },
+            "markers": {
+              "displayedTypes": {
+                "criticalViolations": false,
+                "deployments": true,
+                "relatedDeployments": true,
+                "warningViolations": false
+              }
+            },
+            "nrqlQueries": [
+              {
+                "accountIds": [
+                  4516237
+                ],
+                "query": "SELECT rate(sum(newrelic.timeslice.value), 1 minute) * 1000 FROM Metric WHERE metricTimesliceName LIKE 'GC/%' AND entity.guid IN ('NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDgyNDI2MzYy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyNzI4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIyNzg5MTEy','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDMxODIzNzUz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzEwMTI0','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzM1Njc4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzE3MzAz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDI3NDAyODcz','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNjgxMTg3','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDU4NzA5OTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTIzMTA5MTM5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDg1NjMxNTE4','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NDIyMzQwMzk5','NDUxNjIzN3xBUE18QVBQTElDQVRJT058NTMxNzIxMjEx') FACET entity.name SINCE 1 month ago TIMESERIES 1 day"
+              }
+            ],
+            "platformOptions": {
+              "ignoreTimeRange": false
+            },
+            "thresholds": {
+              "isLabelVisible": true
+            },
+            "yAxisLeft": {
+              "zero": true
+            },
+            "yAxisRight": {
+              "zero": true
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variables": []
+}
